@@ -392,7 +392,7 @@ const Index = () => {
                   </div>
                   <h3 className="text-2xl font-bold text-center mb-2">{pkg.title}</h3>
                   <div className="text-center mb-6">
-                    <div className="text-4xl font-bold text-gradient">{pkg.price} ₽</div>
+                    <div className="text-4xl font-bold text-gradient">70200</div>
                     <div className="text-sm text-muted-foreground mt-1">под ключ</div>
                   </div>
                   <ul className="space-y-3 mb-8">
