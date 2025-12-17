@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
@@ -7,11 +9,56 @@ import { Textarea } from '@/components/ui/textarea';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    message: ''
+  });
+  const { toast } = useToast();
 
   const scrollToSection = (id: string) => {
     setActiveSection(id);
+    setMobileMenuOpen(false);
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/ccc94d9c-78a1-4679-a9a8-c11aeac4e8d4', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: 'Заявка отправлена!',
+          description: 'Мы свяжемся с вами в ближайшее время',
+        });
+        setFormData({ name: '', phone: '', email: '', message: '' });
+      } else {
+        throw new Error(data.error || 'Ошибка отправки');
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось отправить заявку',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const services = [
@@ -90,6 +137,56 @@ const Index = () => {
     { icon: 'Clock', title: 'Быстрый монтаж', description: 'Установка систем в кратчайшие сроки' }
   ];
 
+  const packages = [
+    {
+      title: 'Базовый',
+      price: '29 990',
+      popular: false,
+      features: [
+        '4 IP-камеры Full HD',
+        'Видеорегистратор на 4 канала',
+        'Жесткий диск 1 ТБ',
+        'Кабели и крепления',
+        'Базовая настройка',
+        'Гарантия 1 год'
+      ],
+      icon: 'Home'
+    },
+    {
+      title: 'Оптимальный',
+      price: '59 990',
+      popular: true,
+      features: [
+        '8 IP-камер Full HD с ночным видением',
+        'Видеорегистратор на 8 каналов',
+        'Жесткий диск 2 ТБ',
+        'Удаленный доступ через интернет',
+        'Детекция движения',
+        'Монтаж под ключ',
+        'Настройка мобильного приложения',
+        'Гарантия 2 года + обслуживание'
+      ],
+      icon: 'Building2'
+    },
+    {
+      title: 'Профессиональный',
+      price: '149 990',
+      popular: false,
+      features: [
+        '16 IP-камер 4K Ultra HD',
+        'NVR на 16 каналов с AI',
+        'Жесткий диск 4 ТБ RAID',
+        'Распознавание лиц и номеров',
+        'Аналитика поведения',
+        'Интеграция с СКУД',
+        'Облачное резервирование',
+        'Монтаж + пусконаладка',
+        'Гарантия 3 года + сервис 24/7'
+      ],
+      icon: 'Factory'
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -100,12 +197,12 @@ const Index = () => {
           </div>
           
           <nav className="hidden md:flex gap-8">
-            {['Главная', 'Услуги', 'Решения', 'Портфолио', 'О нас', 'Контакты'].map((item, index) => (
+            {['Главная', 'Услуги', 'Решения', 'Комплекты', 'Портфолио', 'О нас', 'Контакты'].map((item, index) => (
               <button
                 key={item}
-                onClick={() => scrollToSection(['home', 'services', 'solutions', 'portfolio', 'about', 'contacts'][index])}
+                onClick={() => scrollToSection(['home', 'services', 'solutions', 'packages', 'portfolio', 'about', 'contacts'][index])}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
-                  activeSection === ['home', 'services', 'solutions', 'portfolio', 'about', 'contacts'][index]
+                  activeSection === ['home', 'services', 'solutions', 'packages', 'portfolio', 'about', 'contacts'][index]
                     ? 'text-primary'
                     : 'text-foreground/70'
                 }`}
@@ -115,10 +212,41 @@ const Index = () => {
             ))}
           </nav>
 
-          <Button className="hidden md:flex gap-2">
-            <Icon name="Phone" size={18} />
-            Связаться
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button className="hidden md:flex gap-2">
+              <Icon name="Phone" size={18} />
+              Связаться
+            </Button>
+            
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Icon name="Menu" size={24} />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <nav className="flex flex-col gap-6 mt-8">
+                  {['Главная', 'Услуги', 'Решения', 'Комплекты', 'Портфолио', 'О нас', 'Контакты'].map((item, index) => (
+                    <button
+                      key={item}
+                      onClick={() => scrollToSection(['home', 'services', 'solutions', 'packages', 'portfolio', 'about', 'contacts'][index])}
+                      className={`text-left text-lg font-medium transition-colors hover:text-primary ${
+                        activeSection === ['home', 'services', 'solutions', 'packages', 'portfolio', 'about', 'contacts'][index]
+                          ? 'text-primary'
+                          : 'text-foreground'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                  <Button className="w-full gap-2 mt-4" onClick={() => scrollToSection('contacts')}>
+                    <Icon name="Phone" size={18} />
+                    Связаться
+                  </Button>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
 
@@ -236,7 +364,61 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="portfolio" className="py-20 px-4 bg-card">
+      <section id="packages" className="py-20 px-4 bg-card">
+        <div className="container mx-auto">
+          <div className="text-center mb-16 animate-fade-in">
+            <h2 className="text-4xl font-bold mb-4">Готовые комплекты</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Готовые решения под ключ с установкой и настройкой
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {packages.map((pkg, index) => (
+              <Card 
+                key={pkg.title}
+                className={`relative overflow-hidden transition-all duration-300 hover:scale-105 animate-fade-in ${
+                  pkg.popular ? 'border-2 border-primary shadow-2xl' : ''
+                }`}
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                {pkg.popular && (
+                  <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-6 py-2 text-sm font-bold">
+                    Популярный
+                  </div>
+                )}
+                <CardContent className="p-8">
+                  <div className="bg-primary/10 w-20 h-20 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                    <Icon name={pkg.icon} className="text-primary" size={40} />
+                  </div>
+                  <h3 className="text-2xl font-bold text-center mb-2">{pkg.title}</h3>
+                  <div className="text-center mb-6">
+                    <div className="text-4xl font-bold text-gradient">{pkg.price} ₽</div>
+                    <div className="text-sm text-muted-foreground mt-1">под ключ</div>
+                  </div>
+                  <ul className="space-y-3 mb-8">
+                    {pkg.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3">
+                        <Icon name="CheckCircle2" className="text-primary flex-shrink-0 mt-0.5" size={20} />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button 
+                    className="w-full gap-2"
+                    variant={pkg.popular ? 'default' : 'outline'}
+                    onClick={() => scrollToSection('contacts')}
+                  >
+                    <Icon name="ShoppingCart" size={18} />
+                    Заказать комплект
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="portfolio" className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-4xl font-bold mb-4">Портфолио</h2>
@@ -370,22 +552,49 @@ const Index = () => {
             </div>
             <Card className="animate-fade-in">
               <CardContent className="p-6">
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSubmit}>
                   <div>
-                    <Input placeholder="Ваше имя" />
+                    <Input 
+                      placeholder="Ваше имя" 
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      required
+                      disabled={isSubmitting}
+                    />
                   </div>
                   <div>
-                    <Input type="tel" placeholder="Телефон" />
+                    <Input 
+                      type="tel" 
+                      placeholder="Телефон" 
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      required
+                      disabled={isSubmitting}
+                    />
                   </div>
                   <div>
-                    <Input type="email" placeholder="Email" />
+                    <Input 
+                      type="email" 
+                      placeholder="Email" 
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      required
+                      disabled={isSubmitting}
+                    />
                   </div>
                   <div>
-                    <Textarea placeholder="Сообщение" rows={4} />
+                    <Textarea 
+                      placeholder="Сообщение" 
+                      rows={4}
+                      value={formData.message}
+                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      required
+                      disabled={isSubmitting}
+                    />
                   </div>
-                  <Button className="w-full gap-2">
+                  <Button className="w-full gap-2" type="submit" disabled={isSubmitting}>
                     <Icon name="Send" size={18} />
-                    Отправить заявку
+                    {isSubmitting ? 'Отправка...' : 'Отправить заявку'}
                   </Button>
                 </form>
               </CardContent>
